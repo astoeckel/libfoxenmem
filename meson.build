@@ -20,14 +20,14 @@ project('libfoxenmem', 'c', default_options : ['c_std=c99'])
 inc_foxen = include_directories('.')
 
 # Compile and register the unit tests
-dep_foxenmem = dependency(
-    'libfoxenmem',
-    fallback:['libfoxenmem', 'dep_foxenmem'])
+dep_foxenunit = dependency(
+    'libfoxenunit',
+    fallback:['libfoxenunit', 'dep_foxenunit'])
 exe_test_mem = executable(
     'test_mem',
     'test/test_mem.c',
     include_directories: inc_foxen,
-    dependencies: dep_foxenmem,
+    dependencies: dep_foxenunit,
     install: false)
 test('test_mem', exe_test_mem)
 
@@ -46,4 +46,4 @@ pkg.generate(
     description: 'Minimal unittest library')
 
 # Export the dependency
-dep_foxenunit = declare_dependency(include_directories: inc_foxen)
+dep_foxenmem = declare_dependency(include_directories: inc_foxen)
