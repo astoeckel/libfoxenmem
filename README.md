@@ -20,9 +20,10 @@ struct complex_matrix {
 typedef struct complex_matrix complex_matrix_t;
 ```
 This data structure consists of “bookkeeping” data (width/height)
-as well as two arrays holding the real and imaginary part. We want the
-bookkeeping data and the width/height to be in a *single contiguous memory
-region*. Furthermore, the arrays should start at aligned addresses.
+as well as two arrays holding the real and imaginary part. We want to
+store the bookkeeping data and the imaginary and real matrices in a
+*single contiguous memory region*. Furthermore, the arrays should
+start at aligned addresses.
 
 **Two tasks:**
 1. Compute the *total required size* of the contiguous memory region.
