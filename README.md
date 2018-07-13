@@ -24,10 +24,10 @@ as well as two arrays holding the real and imaginary part. We want the
 bookkeeping data and the width/height to be in a *single contiguous memory
 region*. Furthermore, the arrays should start at aligned addresses.
 
-Two tasks:
-1. Compute the total required *size* of the contiguous memory region.
-2. Given a pointer at a memory region compute the pointer at the bookkeeping
-   data as well as the 
+**Two tasks:**
+1. Compute the *total required size* of the contiguous memory region.
+2. Given a pointer at a memory region compute *aligned pointers* at the
+   bookkeeping data as well as the payload.
 
 #### Computing the size
 
