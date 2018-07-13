@@ -60,11 +60,14 @@ complex_matrix_t *complex_matrix_init(void *mem, uint16_t width,
 
 `mem.h` defines the following macros
 
-`ASSUME_ALIGNED(P)`<br/>
+`FX_ALIGN`<br/>
+Alignment boundary in bytes. Should be 16 to support SSE.
+
+`FX_ASSUME_ALIGNED(P)`<br/>
 Tells the compiler that it should assume that `P` is aligned at a 16-byte
 boundary. May allow the compiler to emit more efficient code.
 
-`ALIGN_ADDR(P)`<br/>
+`FX_ALIGN_ADDR(P)`<br/>
 Aligns the pointer `P` at a 16 byte boundary.
 
 ### Functions
