@@ -20,9 +20,10 @@ struct complex_matrix {
 typedef struct complex_matrix complex_matrix_t;
 ```
 This data structure consists of “bookkeeping” data (width/height)
-as well as two arrays holding the real and imaginary part. We want the
-bookkeeping data and the width/height to be in a *single contiguous memory
-region*. Furthermore, the arrays should start at aligned addresses.
+as well as two arrays holding the real and imaginary part. We want to
+store the bookkeeping data and the imaginary and real matrices in a
+*single contiguous memory region*. Furthermore, the arrays should
+start at aligned addresses.
 
 **Two tasks:**
 1. Compute the *total required size* of the contiguous memory region.
@@ -60,11 +61,14 @@ complex_matrix_t *complex_matrix_init(void *mem, uint16_t width,
 
 `mem.h` defines the following macros
 
-`ASSUME_ALIGNED(P)`<br/>
+`FX_ALIGN`<br/>
+Alignment boundary in bytes. Should be 16 to support SSE.
+
+`FX_ASSUME_ALIGNED(P)`<br/>
 Tells the compiler that it should assume that `P` is aligned at a 16-byte
 boundary. May allow the compiler to emit more efficient code.
 
-`ALIGN_ADDR(P)`<br/>
+`FX_ALIGN_ADDR(P)`<br/>
 Aligns the pointer `P` at a 16 byte boundary.
 
 ### Functions
