@@ -43,7 +43,7 @@ pkg.generate(
     name: 'libfoxenmem',
     version: '1.0',
     filebase: 'libfoxenmem',
-    description: 'Minimal unittest library')
+    description: 'Utilities for heap-free memory management')
 
 # Export the dependency
 dep_foxenmem = declare_dependency(include_directories: inc_foxen)
