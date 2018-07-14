@@ -61,15 +61,27 @@ complex_matrix_t *complex_matrix_init(void *mem, uint16_t width,
 
 `mem.h` defines the following macros
 
+---
+
 `FX_ALIGN`<br/>
 Alignment boundary in bytes. Should be 16 to support SSE.
+
+---
 
 `FX_ASSUME_ALIGNED(P)`<br/>
 Tells the compiler that it should assume that `P` is aligned at a 16-byte
 boundary. May allow the compiler to emit more efficient code.
 
+---
+
 `FX_ALIGN_ADDR(P)`<br/>
 Aligns the pointer `P` at a 16 byte boundary.
+
+---
+
+`FX_ZERO_ALIGNED_MEM(P)`<br/>
+Macro that fills the structure pointed at by `P` with zeros. See
+`fx_zero_aligned_mem()` regarding potential dangers.
 
 ### Functions
 
@@ -87,13 +99,14 @@ describing. This function initializes this value to `FX_ALIGN - 1`.
 **Return value:**<br/>
 Always returns true to facilitate chaining with other `fx_mem_*_size` functions.
 
+---
 
 ```C
 static inline bool fx_mem_update_size(uint32_t *size, uint32_t n_bytes);
 ```
 Function used internally to compute the total size of a data structure
 consisting of multiple substructure. Calling this function updates the size
-of the outer datastructure by adding a substructure of size n_bytes. Assumes
+of the outer data structure by adding a substructure of size `n_bytes`. Assumes
 that the beginning of the substructure should be aligned.
 
 **Parameters:**<br/>
@@ -103,6 +116,24 @@ that the beginning of the substructure should be aligned.
 **Return value:**<br/>
 Zero if there was an overflow, one otherwise.
 
+---
+
+```C
+static inline void fx_zero_aligned_mem(void *mem, uint32_t size);
+```
+Fills the given memory region with zeros. In contrast to `memset(mem, 0, size)`
+this assumes that the pointer is aligned at the `FX_ALIGN` boundary and that
+we can write multiples of `FX_ALIGN` bytes at once. This is **potentially**
+**dangerous**, so do not use this function if you don't know exactly what you're
+doing.
+
+**Parameters:**<br/>
+*mem* is a pointer at the memory region that should be zeroed out. This
+pointer is assumed to be aligned.<br/>
+*size* is the size of the memory region that should be zeroed in bytes.
+This value is effectively rounded up to a multiple of `FX_ALIGN`.<br/>
+
+---
 
 ```C
 static inline void* fx_mem_align(void **mem, uint32_t size);
