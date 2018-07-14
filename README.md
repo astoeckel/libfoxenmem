@@ -33,8 +33,9 @@ region*. Furthermore, the arrays should start at aligned addresses.
 
 ```C
 uint32_t complex_matrix_size(uint16_t width, uint16_t height) {
-	uint32_t size = FX_ALIGN - 1; /* Reserve some space to align the struct */
-	bool ok = fx_mem_update_size(&size, sizeof(complex_matrix_t)) &&
+	uint32_t size;
+	bool ok = fx_mem_init_size(&size) &&
+	          fx_mem_update_size(&size, sizeof(complex_matrix_t)) &&
 	          fx_mem_update_size(&size, sizeof(float) * width * height) &&
 	          fx_mem_update_size(&size, sizeof(float) * width * height);
 	return ok ? size : 0; /* ok is false if there was an overflow */
@@ -67,6 +68,21 @@ boundary. May allow the compiler to emit more efficient code.
 Aligns the pointer `P` at a 16 byte boundary.
 
 ### Functions
+
+```C
+static inline bool fx_mem_init_size(uint32_t *size);
+```
+Call this first in a chain of fx_mem_update_size() calls. It will make sure
+that there is enough space to align the datastructure whenever the user
+provides a non-aligned target memory pointer.
+
+**Parameters:**<br/>
+*size* is a pointer at a variable that holds the size of the object that we're
+describing. This function initializes this value to `FX_ALIGN - 1`.
+
+**Return value:**<br/>
+Always returns true to facilitate chaining with other `fx_mem_*_size` functions.
+
 
 ```C
 static inline bool fx_mem_update_size(uint32_t *size, uint32_t n_bytes);

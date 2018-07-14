@@ -31,8 +31,9 @@ struct complex_matrix {
 typedef struct complex_matrix complex_matrix_t;
 
 uint32_t complex_matrix_size(uint16_t width, uint16_t height) {
-	uint32_t size = FX_ALIGN - 1; /* Reserve some space to align the struct */
-	bool ok = fx_mem_update_size(&size, sizeof(complex_matrix_t)) &&
+	uint32_t size;
+	bool ok = fx_mem_init_size(&size) &&
+	          fx_mem_update_size(&size, sizeof(complex_matrix_t)) &&
 	          fx_mem_update_size(&size, sizeof(float) * width * height) &&
 	          fx_mem_update_size(&size, sizeof(float) * width * height);
 	return ok ? size : 0; /* ok is false if there was an overflow */

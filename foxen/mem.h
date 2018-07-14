@@ -59,10 +59,21 @@
 	    (void *)(((uintptr_t)(P) + FX_ALIGN - 1) & (~(FX_ALIGN - 1)))))
 
 /**
- * Function used internally to compute the total size of a datastructure
- * consisting of multiple substructure. Calling this function updates the size
- * of the outer datastructure by adding a substructure of size n_bytes. Assumes
- * that the beginning of the substructure should be aligned.
+ * Call this first in a chain of fx_mem_update_size() calls. It will make sure
+ * that there is enough space to align the datastructure whenever the user
+ * provides a non-aligned target memory pointer.
+ *
+ * @param size is a pointer at a variable that holds the size of the object
+ * that we're describing. This function initializes this value to FX_ALIGN - 1.
+ * @return Always returns true to facilitate chaining with other fx_mem_*_size()
+ * functions.
+ */
+static inline bool fx_mem_init_size(uint32_t *size) {
+	*size = FX_ALIGN;
+	return true;
+}
+
+/**
  *
  * @param size is a pointer at the variable holding the size of the
  * datastructure.
