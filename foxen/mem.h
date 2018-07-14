@@ -74,15 +74,19 @@ static inline bool fx_mem_init_size(uint32_t *size) {
 }
 
 /**
+ * Function used to compute the total size of a datastructure consisting of
+ * multiple substructures. Calling this function updates the size of the outer
+ * datastructure by adding a substructure of size n_bytes. Assumes that the
+ * beginning of the substructure must be aligned.
  *
  * @param size is a pointer at the variable holding the size of the
- * datastructure.
+ * datastructure. This must always be a multiple of FX_ALIGN.
  * @param n_bytes size of the sub-structure that should be added.
  * @return zero if there was an overflow, one otherwise.
  */
 static inline bool fx_mem_update_size(uint32_t *size, uint32_t n_bytes) {
 	const uint32_t new_size =
-	    ((*size + FX_ALIGN - 1) & (~(FX_ALIGN - 1))) + n_bytes;
+	    ((*size + n_bytes + FX_ALIGN - 1) & (~(FX_ALIGN - 1)));
 	if (new_size < *size) {
 		return false; /* error, there has been an overflow */
 	}

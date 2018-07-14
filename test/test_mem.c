@@ -60,12 +60,30 @@ void test_align_addr() {
 	}
 }
 
-void test_mem_update_size_simple() {
-	uint32_t size = 1;
+void test_mem_update_size_simple_1() {
+	uint32_t size;
+	EXPECT_TRUE(fx_mem_init_size(&size));
+	EXPECT_EQ(FX_ALIGN, size);
 	EXPECT_TRUE(fx_mem_update_size(&size, 12));
-	EXPECT_EQ(FX_ALIGN + 12, size);
+	EXPECT_EQ(2 * FX_ALIGN, size);
 	EXPECT_TRUE(fx_mem_update_size(&size, 12));
-	EXPECT_EQ(2 * FX_ALIGN + 12, size);
+	EXPECT_EQ(3 * FX_ALIGN, size);
+}
+
+void test_mem_update_size_simple_2() {
+	uint32_t size;
+	EXPECT_TRUE(fx_mem_init_size(&size));
+	EXPECT_EQ(FX_ALIGN, size);
+	EXPECT_TRUE(fx_mem_update_size(&size, 1));
+	EXPECT_EQ(2 * FX_ALIGN, size);
+}
+
+void test_mem_update_size_simple_3() {
+	uint32_t size;
+	EXPECT_TRUE(fx_mem_init_size(&size));
+	EXPECT_EQ(FX_ALIGN, size);
+	EXPECT_TRUE(fx_mem_update_size(&size, 0));
+	EXPECT_EQ(FX_ALIGN, size);
 }
 
 void test_mem_update_size_overflow() {
@@ -99,7 +117,9 @@ void test_example_code() {
 
 int main() {
 	RUN(test_align_addr);
-	RUN(test_mem_update_size_simple);
+	RUN(test_mem_update_size_simple_1);
+	RUN(test_mem_update_size_simple_2);
+	RUN(test_mem_update_size_simple_3);
 	RUN(test_example_code);
 	DONE;
 }
