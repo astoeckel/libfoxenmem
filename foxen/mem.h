@@ -123,7 +123,7 @@ static inline void *fx_mem_align(void **mem, uint32_t size) {
  * @param size is the size of the memory region that should be zeroed in bytes.
  * This value is effectively rounded up to a multiple of FX_ALIGN
  */
-static inline void fx_zero_aligned_mem(void *mem, uint32_t size) {
+static inline void fx_mem_zero_aligned(void *mem, uint32_t size) {
 	assert((((uintptr_t)mem) & (FX_ALIGN - 1)) == 0); /* mem must be aligned */
 	mem = FX_ASSUME_ALIGNED(mem);
 	for (uint32_t i = 0; i < (size + FX_ALIGN - 1) / FX_ALIGN; i++) {
@@ -134,10 +134,10 @@ static inline void fx_zero_aligned_mem(void *mem, uint32_t size) {
 
 /**
  * Macro that fills the structure pointed at by P with zeros. See
- * fx_zero_aligned_mem() regarding potential dangers.
+ * fx_mem_zero_aligned() regarding potential dangers.
  */
-#define FX_ZERO_ALIGNED_MEM(P) do { \
-	fx_mem_zero(P, sizeof(*(P))); \
+#define FX_MEM_ZERO_ALIGNED(P) do { \
+	fx_mem_zero_aligned(P, sizeof(*(P))); \
 } while(0)
 
 #endif /* FOXEN_MEM_H */

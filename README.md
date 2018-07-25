@@ -79,9 +79,9 @@ Aligns the pointer `P` at a 16 byte boundary.
 
 ---
 
-`FX_ZERO_ALIGNED_MEM(P)`<br/>
+`FX_MEM_ZERO_ALIGNED(P)`<br/>
 Macro that fills the structure pointed at by `P` with zeros. See
-`fx_zero_aligned_mem()` regarding potential dangers.
+`fx_mem_zero_aligned()` regarding potential dangers.
 
 ### Functions
 
@@ -119,7 +119,7 @@ Zero if there was an overflow, one otherwise.
 ---
 
 ```C
-static inline void fx_zero_aligned_mem(void *mem, uint32_t size);
+static inline void fx_mem_zero_aligned(void *mem, uint32_t size);
 ```
 Fills the given memory region with zeros. In contrast to `memset(mem, 0, size)`
 this assumes that the pointer is aligned at the `FX_ALIGN` boundary and that
