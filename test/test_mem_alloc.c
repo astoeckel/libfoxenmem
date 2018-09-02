@@ -33,8 +33,8 @@ static uint8_t slot_acquired[n_available] __attribute__((aligned(64)));
 static uint32_t free_idx __attribute__((aligned(64)));
 static uint32_t n_allocated __attribute__((aligned(64)));
 
-#define FREE(i) fx_mem_free(i, allocated, &free_idx, &n_allocated)
-#define ALLOC fx_mem_alloc(allocated, &free_idx, &n_allocated, n_available)
+#define ALLOC fx_mem_pool_alloc(allocated, &free_idx, &n_allocated, n_available)
+#define FREE(i) fx_mem_pool_free(i, allocated, &free_idx, &n_allocated)
 
 static void _test_reset() {
 	free_idx = 0U;
@@ -138,7 +138,7 @@ static void test_mem_alloc_free_threads(void) {
 		pthread_join(threads[i], NULL);
 	}
 
-	/* Each slot should contain the value N_REPEAT */
+	/* Make sure the total number of allocations performed is correct */
 	uint64_t sum = 0;
 	for (uint32_t i = 0U; i < n_available; i++) {
 		sum += slots[i];
