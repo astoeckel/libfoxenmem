@@ -102,7 +102,8 @@ static void *_test_mem_alloc_free_threads_main(void *data) {
 			   at the moment. */
 			uint8_t *flag = &slot_acquired[allocations[j]];
 			EXPECT_EQ(0U, __atomic_load_n(flag, __ATOMIC_SEQ_CST));
-			__atomic_store_n(&slot_acquired[allocations[j]], 1U, __ATOMIC_SEQ_CST);
+			__atomic_store_n(&slot_acquired[allocations[j]], 1U,
+			                 __ATOMIC_SEQ_CST);
 
 			/* Increment the slot allocation counter */
 			slots[allocations[j]]++;
