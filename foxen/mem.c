@@ -22,8 +22,8 @@
  * PUBLIC C API                                                               *
  ******************************************************************************/
 
-uint32_t fx_mem_alloc(uint32_t allocated_ptr[], uint32_t *free_idx_ptr,
-                      uint32_t *n_allocated_ptr, uint32_t n_available) {
+uint32_t fx_mem_pool_alloc(uint32_t allocated_ptr[], uint32_t *free_idx_ptr,
+                           uint32_t *n_allocated_ptr, uint32_t n_available) {
 /* Bitmap entry width (BMEW) */
 #define FX_BMEW (8U * sizeof(allocated_ptr[0]))
 	while (true) {
@@ -91,8 +91,8 @@ uint32_t fx_mem_alloc(uint32_t allocated_ptr[], uint32_t *free_idx_ptr,
 #undef FX_BMEW
 }
 
-void fx_mem_free(uint32_t idx, uint32_t allocated_ptr[], uint32_t *free_idx_ptr,
-                 uint32_t *n_allocated_ptr) {
+void fx_mem_pool_free(uint32_t idx, uint32_t allocated_ptr[],
+                      uint32_t *free_idx_ptr, uint32_t *n_allocated_ptr) {
 /* Bitmap entry width (BMEW). */
 #define FX_BMEW (8U * sizeof(allocated_ptr[0]))
 	/* Load all state variables */

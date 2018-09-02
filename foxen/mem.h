@@ -161,8 +161,8 @@ static inline void fx_mem_zero_aligned(void *mem, uint32_t size) {
  * @return the index in the array that was just allocated. On failure, returns
  * n_available to indicate that all slots are currently allocated.
  */
-uint32_t fx_mem_alloc(uint32_t allocated[], uint32_t *free_idx,
-                      uint32_t *n_allocated, uint32_t n_available);
+uint32_t fx_mem_pool_alloc(uint32_t allocated[], uint32_t *free_idx,
+                           uint32_t *n_allocated, uint32_t n_available);
 
 /**
  * Marks the slot previously allocated by _fx_mem_alloc() as free.
@@ -180,7 +180,7 @@ uint32_t fx_mem_alloc(uint32_t allocated[], uint32_t *free_idx,
  * @param n_allocated is a pointer at an integer counting the number of elements
  * that have been allocated so far.
  */
-void fx_mem_free(uint32_t idx, uint32_t allocated[], uint32_t *free_idx,
-                 uint32_t *n_allocated);
+void fx_mem_pool_free(uint32_t idx, uint32_t allocated[], uint32_t *free_idx,
+                      uint32_t *n_allocated);
 
 #endif /* FOXEN_MEM_H */
