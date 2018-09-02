@@ -141,5 +141,46 @@ static inline void fx_mem_zero_aligned(void *mem, uint32_t size) {
 		fx_mem_zero_aligned(P, sizeof(*(P))); \
 	} while (0)
 
+/**
+ * Extremely simple, thread-safe memory pool allocation function. The allocator
+ * operates on a compressed bit-array for allocation tracking. This function is
+ * specifically for allocating slots within an array, i.e. to allocate elements
+ * from a pool of equal-sized elements.
+ *
+ * Note that for best performance (especially in multi-threaded environments),
+ * all pointers passed as arguments to this function should be cache-line
+ * aligned, i.e. aligned at 64 byte boundaries.
+ *
+ * @param allocated is a pointer at a bitmap that traces which slots have
+ * been allocated. Each integer in the array corresponds to 32 slots.
+ * @param free_idx is a pointer at an integer storing the last known free
+ * slot index.
+ * @param n_allocated is a pointer at an integer counting the number of elements
+ * that have been allocated so far.
+ * @param n_available is the number of elements available in the array.
+ * @return the index in the array that was just allocated. On failure, returns
+ * n_available to indicate that all slots are currently allocated.
+ */
+uint32_t fx_mem_alloc(uint32_t allocated[], uint32_t *free_idx,
+                      uint32_t *n_allocated, uint32_t n_available);
+
+/**
+ * Marks the slot previously allocated by _fx_mem_alloc() as free.
+ *
+ * Note that for best performance (especially in multi-threaded environments),
+ * all pointers passed as arguments to this function should be cache-line
+ * aligned, i.e. aligned at 64 byte boundaries.
+ *
+ * @param idx is the slot index that should be freed. Make sure to never
+ * double-free slot entries.
+ * @param allocated is a pointer at a bit-array that traces which slots have
+ * been allocated. Each integer in the array corresponds to 32 slots.
+ * @param free_idx is a pointer at an integer containing pointing at the last
+ * known free integer.
+ * @param n_allocated is a pointer at an integer counting the number of elements
+ * that have been allocated so far.
+ */
+void fx_mem_free(uint32_t idx, uint32_t allocated[], uint32_t *free_idx,
+                 uint32_t *n_allocated);
 
 #endif /* FOXEN_MEM_H */

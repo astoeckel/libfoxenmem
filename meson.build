@@ -16,8 +16,15 @@
 
 project('libfoxenmem', 'c', default_options : ['c_std=c99'])
 
-# This is a header only library
+# Include directory
 inc_foxen = include_directories('.')
+
+# Define the contents of the actual library
+lib_foxenmem = library(
+    'foxenmem',
+    'foxen/mem.c',
+    include_directories: inc_foxen,
+    install: true)
 
 # Compile and register the unit tests
 dep_foxenunit = dependency(
@@ -27,9 +34,20 @@ exe_test_mem = executable(
     'test_mem',
     'test/test_mem.c',
     include_directories: inc_foxen,
+    link_with: lib_foxenmem,
     dependencies: dep_foxenunit,
     install: false)
 test('test_mem', exe_test_mem)
+
+dep_threads = dependency('threads')
+exe_test_mem_alloc = executable(
+    'test_mem_alloc',
+    'test/test_mem_alloc.c',
+    include_directories: inc_foxen,
+    link_with: lib_foxenmem,
+    dependencies: [dep_foxenunit, dep_threads],
+    install: false)
+test('test_mem_alloc', exe_test_mem_alloc)
 
 # Install the header file
 install_headers(
@@ -39,6 +57,7 @@ install_headers(
 # Generate a Pkg config file
 pkg = import('pkgconfig')
 pkg.generate(
+    libraries: [lib_foxenmem],
     subdirs: [],
     name: 'libfoxenmem',
     version: '1.0',
