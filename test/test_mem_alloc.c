@@ -128,6 +128,12 @@ static void test_mem_alloc_free_threads(void) {
 
 	_test_reset();
 
+#ifdef __EMSCRIPTEN__
+	/* No proper support pthreads with shared memory for now */
+	for (uint32_t i = 0U; i < N_THREADS; i++) {
+		_test_mem_alloc_free_threads_main(NULL);
+	}
+#else
 	/* Create N_THREADS threads */
 	for (uint32_t i = 0U; i < N_THREADS; i++) {
 		pthread_create(&threads[i], NULL, _test_mem_alloc_free_threads_main,
@@ -138,6 +144,7 @@ static void test_mem_alloc_free_threads(void) {
 	for (uint32_t i = 0U; i < N_THREADS; i++) {
 		pthread_join(threads[i], NULL);
 	}
+#endif
 
 	/* Make sure the total number of allocations performed is correct */
 	uint64_t sum = 0;
