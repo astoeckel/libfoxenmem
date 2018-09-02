@@ -19,60 +19,64 @@
 #include <foxen/mem.h>
 
 /******************************************************************************
+ * PRIVATE IMPLEMENTATION DETAILS                                             *
+ ******************************************************************************/
+
+/* http://graphics.stanford.edu/~seander/bithacks.html#IntegerLogDeBruijn */
+
+static const int multiply_de_bruijn_tbl[32U] = {
+    0,  1,  28, 2,  29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4,  8,
+    31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6,  11, 5,  10, 9};
+
+static inline uint32_t _fx_lsb(uint32_t v) {
+	return multiply_de_bruijn_tbl[(uint32_t)((v & -v) * 0x077CB531UL) >> 27U];
+}
+
+/******************************************************************************
  * PUBLIC C API                                                               *
  ******************************************************************************/
 
 uint32_t fx_mem_pool_alloc(uint32_t allocated_ptr[], uint32_t *free_idx_ptr,
                            uint32_t *n_allocated_ptr, uint32_t n_available) {
-/* Bitmap entry width (BMEW) */
-#define FX_BMEW (8U * sizeof(allocated_ptr[0]))
+	const uint32_t free_idx = __atomic_load_n(free_idx_ptr, __ATOMIC_SEQ_CST);
+	uint32_t idx = free_idx & (~(32U - 1U));
 	while (true) {
-		/* Load the current free_idx, the index we assume might be free. Then,
-		 * try to write the index we should search at with the next iteration.
-		 * This allows thread to cooperate to some degree, since threads do
-		 * never search at exactly the same free_idx_ (except after a wrap
-		 * around).
-		 *
-		 * There is still some congestion since allocations are stored in a
-		 * bitmap, and writing to this bitmap will invalidate the entire
-		 * cache line (corresponding to 512 entries for a 64 byte cache line).
-		 *
-		 * Note that free_idx is only a suggestion as to where we are likely
-		 * to find a free entry, it is not a guarantee of any kind that this
-		 * is actually true. We will linearly iterate along the slot indices to
-		 * find a new entry. */
-		uint32_t idx = __atomic_load_n(free_idx_ptr, __ATOMIC_SEQ_CST);
-		while (!__atomic_compare_exchange_n(free_idx_ptr, &idx,
-		                                    (idx + 1U) % n_available, false,
-		                                    __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
-			;
-
-		/* Abort if there is no more space and all slots have been allocated.
-		 * Note that we may wrongly abort here if a slot is just in the progress
-		 * of being freed, but this is okay. Similarly, we may pass here
-		 * although all slots have been allocated and the variable has not yet
-		 * been incremented, but this is okay too, since this case will be
-		 * catched further below. */
-		uint32_t n_allocated =
-		    __atomic_load_n(n_allocated_ptr, __ATOMIC_SEQ_CST);
-		if (n_allocated >= n_available) {
-			return n_available;
+		/* Load the current bitmap entry and search the first free zero-bit. If
+		   all bits are set, go to the next bitmap entry. */
+		uint32_t *allocated_slot_ptr = allocated_ptr + idx / 32U;
+		uint32_t allocated =
+		    __atomic_load_n(allocated_slot_ptr, __ATOMIC_SEQ_CST);
+		uint32_t offs = 32U; /* Assume there is no free bit */
+		if (~allocated) {
+			offs = _fx_lsb(~allocated);
 		}
 
-		/* Compute the bit-mask and the memory location of the bitmap entry we
-		   are trying to modify. */
-		const uint32_t mask = (1U << (idx % FX_BMEW));
-		uint32_t *allocated_slot_ptr = allocated_ptr + idx / FX_BMEW;
+		/* Update the result index, start from the beginning of the list if we
+		   passed the end */
+		idx += offs;
+		if (idx >= n_available) {
+			/* We wrapped around. Abort if there is no more space and all slots
+			 * have been allocated. Note that we may wrongly abort here if a
+			 * slot is just in the progress of being freed, but this is okay. */
+			uint32_t n_allocated =
+				__atomic_load_n(n_allocated_ptr, __ATOMIC_SEQ_CST);
+			if (n_allocated >= n_available) {
+				return n_available;
+			}
+			idx = 0U;
+			continue;
+		}
+		if (offs >= 32U) {
+			continue; /* No free bit, continue */
+		}
 
 		/* Check whether the entry is in use. If yes, continue with the next
 		 * iteration, then try to write the new bitmap entry. If no, try to
 		 * write the updated value to the bitmap. If this is successful, update
 		 * the number of allocated elements, otherwise continue with the outer
 		 * loop and search for a free bitmap entry. */
-		uint32_t allocated =
-		    __atomic_load_n(allocated_slot_ptr, __ATOMIC_SEQ_CST);
-		if (!(allocated & mask) &&
-		    __atomic_compare_exchange_n(allocated_slot_ptr, &allocated,
+		const uint32_t mask = (1U << offs);
+		if (__atomic_compare_exchange_n(allocated_slot_ptr, &allocated,
 		                                allocated | mask, false,
 		                                __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
 			/* Writing the new bitmap entry was successful, we need to update
@@ -80,29 +84,35 @@ uint32_t fx_mem_pool_alloc(uint32_t allocated_ptr[], uint32_t *free_idx_ptr,
 			 * where the slot is allocated by setting the corresponding bit in
 			 * the bitmap, but the n_allocated counter has not been incremented,
 			 * but as explained above, this is fine. */
+				uint32_t n_allocated =
+					__atomic_load_n(n_allocated_ptr, __ATOMIC_SEQ_CST);
 			while (!__atomic_compare_exchange_n(
 			    n_allocated_ptr, &n_allocated, n_allocated + 1U, true,
 			    __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
 				;
 
+			/* We found a free slot, so update the free_idx to point at the
+			   index after the free_idx. */
+			const uint32_t idx_next = (idx + 1U) % n_available;
+			__atomic_store_n(free_idx_ptr, idx_next, __ATOMIC_SEQ_CST);
 			return idx;
 		}
+
+		/* Make sure the index is rounded appropriately, then try again */
+		idx = idx & (~(32U - 1U));
 	}
-#undef FX_BMEW
 }
 
 void fx_mem_pool_free(uint32_t idx, uint32_t allocated_ptr[],
                       uint32_t *free_idx_ptr, uint32_t *n_allocated_ptr) {
-/* Bitmap entry width (BMEW). */
-#define FX_BMEW (8U * sizeof(allocated_ptr[0]))
 	/* Load all state variables */
-	uint32_t *allocated_slot_ptr = allocated_ptr + idx / FX_BMEW;
+	uint32_t *allocated_slot_ptr = allocated_ptr + idx / 32U;
 	uint32_t allocated = __atomic_load_n(allocated_ptr, __ATOMIC_SEQ_CST);
 	uint32_t n_allocated = __atomic_load_n(n_allocated_ptr, __ATOMIC_SEQ_CST);
 	uint32_t free_idx = __atomic_load_n(free_idx_ptr, __ATOMIC_SEQ_CST);
 
 	/* Reset the corresponding bit in the bitmap. */
-	uint32_t mask = ~(1U << (idx % FX_BMEW));
+	uint32_t mask = ~(1U << (idx % 32U));
 	while (!__atomic_compare_exchange_n(allocated_slot_ptr, &allocated,
 	                                    allocated & mask, true,
 	                                    __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
@@ -129,6 +139,5 @@ void fx_mem_pool_free(uint32_t idx, uint32_t allocated_ptr[],
 	       !__atomic_compare_exchange_n(free_idx_ptr, &free_idx, idx, true,
 	                                    __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
 		;
-#undef FX_BMEW
 }
 
